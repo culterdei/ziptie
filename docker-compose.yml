@@ -1,0 +1,39 @@
+services:
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./:/code:ro
+    environment:
+      - DB_URL=mysql+pymysql://root:password123@db:3306/mydb
+    ports:
+      - "8000:80"
+    restart: on-failure
+
+  db:
+    image: mysql:latest
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      - MYSQL_HOST=127.0.0.1
+      - MYSQL_ROOT_PASSWORD=password123
+      - MYSQL_DATABASE=mydb
+    ports:
+      - "3306:3306"
+    expose:
+      - 3306
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p$$MYSQL_ROOT_PASSWORD']
+      interval: 30s
+      timeout: 5s
+      retries: 10
+
+
+volumes:
+      mysql_data:
